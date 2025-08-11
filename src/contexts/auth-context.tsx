@@ -2,17 +2,17 @@
 "use client";
 
 import { createContext, useEffect, useState, ReactNode, useContext } from 'react';
-import { 
-  User, 
-  onAuthStateChanged, 
-  GoogleAuthProvider, 
+import {
+  User,
+  onAuthStateChanged,
+  GoogleAuthProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  Auth
+  Auth,
+  getAuth,
 } from 'firebase/auth';
-import { getAuth } from "firebase/auth";
 import { getMessaging, Messaging } from "firebase/messaging";
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';

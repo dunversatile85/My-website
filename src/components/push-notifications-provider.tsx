@@ -12,7 +12,7 @@ export function PushNotificationsProvider() {
   useEffect(() => {
     if (messaging && user) {
         // A real app would register a service worker here
-        // navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        // navigator.service-worker.register('/firebase-messaging-sw.js')
         
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
