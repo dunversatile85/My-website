@@ -8,9 +8,10 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  Auth
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseInstances } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
 
@@ -28,17 +29,24 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState<Auth | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    const { auth: authInstance } = getFirebaseInstances();
+    setAuth(authInstance);
+
+    if (authInstance) {
+      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    }
   }, []);
 
   const signInWithGoogle = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -52,6 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
+    if (!auth) return;
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
@@ -64,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
+    if (!auth) return;
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
@@ -76,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOutUser = async () => {
+    if (!auth) return;
     try {
       await signOut(auth);
     } catch (error: any) {

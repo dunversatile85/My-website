@@ -13,13 +13,11 @@ const firebaseConfig = {
   measurementId: ""
 };
 
-// Initialize Firebase for client-side
-function getFirebaseInstances(): { app: FirebaseApp, auth: Auth } {
+function getFirebaseInstances() {
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  const auth = getAuth(app);
+  
   if (typeof window !== 'undefined') {
-    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    const auth = getAuth(app);
-    
-    // Initialize other services if needed
     try {
       getAnalytics(app);
     } catch (e) {
@@ -30,13 +28,11 @@ function getFirebaseInstances(): { app: FirebaseApp, auth: Auth } {
     } catch (e) {
       console.error('Failed to initialize Messaging', e);
     }
-    
-    return { app, auth };
   }
-  // This is a fallback for server-side rendering, though client-side is preferred for auth
-  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  const auth = getAuth(app);
+  
   return { app, auth };
 }
 
-export const { app, auth } = getFirebaseInstances();
+// We are exporting the function so that we can initialize Firebase on the client-side
+// and avoid server-side rendering issues.
+export { getFirebaseInstances };

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { getMessaging, getToken } from 'firebase/messaging';
-import { app } from '@/lib/firebase';
+import { getFirebaseInstances } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -15,6 +15,7 @@ export function PushNotificationsProvider() {
         // navigator.serviceWorker.register('/firebase-messaging-sw.js')
         
         try {
+          const { app } = getFirebaseInstances();
           const messaging = getMessaging(app);
           
           Notification.requestPermission().then((permission) => {
