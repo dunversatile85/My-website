@@ -4,10 +4,11 @@ import { useEffect } from 'react';
 import { getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { messaging } from '@/lib/firebase'; // Direct import
 
 export function PushNotificationsProvider() {
   const { toast } = useToast();
-  const { user, messaging } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (messaging && user && typeof window !== 'undefined') {
@@ -40,7 +41,7 @@ export function PushNotificationsProvider() {
             }
         });
     }
-  }, [toast, user, messaging]);
+  }, [toast, user]);
 
   return null; // This component does not render anything
 }
