@@ -7,5 +7,5 @@ export const firebaseConfig: FirebaseOptions = {
   projectId: "dons-playworld",
   storageBucket: "dons-playworld.appspot.com",
   messagingSenderId: "4636726751",
-  appId: "1:4636726751:web:f503c77e281710f74c606a"
+  appId: "1:4636726751:web:f503c77e281710f74c606a",
 };

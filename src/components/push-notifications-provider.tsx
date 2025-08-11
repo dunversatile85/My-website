@@ -4,12 +4,10 @@ import { useEffect } from 'react';
 import { getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { useFirebase } from '@/contexts/auth-context';
 
 export function PushNotificationsProvider() {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { messaging } = useFirebase();
+  const { user, messaging } = useAuth();
 
   useEffect(() => {
     if (messaging && user) {

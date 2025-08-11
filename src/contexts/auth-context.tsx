@@ -19,25 +19,8 @@ import { AuthCredentials } from '@/types';
 import { firebaseConfig } from '@/lib/firebase';
 import { getMessaging, Messaging } from 'firebase/messaging';
 import { getAnalytics, Analytics } from 'firebase/analytics';
+import { Spinner } from '@/components/spinner';
 
-// Firebase context
-interface FirebaseContextType {
-  app: FirebaseApp;
-  auth: Auth;
-  messaging: Messaging | null;
-  analytics: Analytics | null;
-}
-const FirebaseContext = createContext<FirebaseContextType | null>(null);
-
-export const useFirebase = () => {
-    const context = useContext(FirebaseContext);
-    if (!context) {
-        throw new Error('useFirebase must be used within a FirebaseProvider');
-    }
-    return context;
-};
-
-// Auth context
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -45,26 +28,55 @@ interface AuthContextType {
   signUpWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signInWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signOutUser: () => Promise<void>;
+  messaging: Messaging | null;
 }
+
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Auth Provider Component
-const AuthProviderContent = ({ children }: { children: ReactNode }) => {
-  const { auth } = useFirebase();
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState<Auth | null>(null);
+  const [messaging, setMessaging] = useState<Messaging | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth]);
+    if (typeof window !== 'undefined') {
+      const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+      const authInstance = getAuth(app);
+      setAuth(authInstance);
+
+      try {
+        const messagingInstance = getMessaging(app);
+        setMessaging(messagingInstance);
+      } catch (e) {
+        console.error('Failed to initialize Messaging', e);
+      }
+      
+      try {
+        getAnalytics(app);
+      } catch (e) {
+        console.error('Failed to initialize Analytics', e);
+      }
+
+      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    }
+  }, []);
 
   const handleAuthError = (error: any) => {
-    setLoading(false);
     toast({
       variant: "destructive",
       title: "Authentication Failed",
@@ -73,7 +85,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    setLoading(true);
+    if (!auth) return;
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
@@ -83,7 +95,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   };
   
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
-    setLoading(true);
+    if (!auth) return;
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -92,7 +104,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   };
   
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
-    setLoading(true);
+    if (!auth) return;
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -101,7 +113,7 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
   };
   
   const signOutUser = async () => {
-    setLoading(true);
+    if (!auth) return;
     try {
       await signOut(auth);
     } catch (error) {
@@ -116,46 +128,18 @@ const AuthProviderContent = ({ children }: { children: ReactNode }) => {
     signUpWithEmail,
     signInWithEmail,
     signOutUser,
+    messaging,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-
-// Main Provider that ensures Firebase is initialized before Auth
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [firebaseInstances, setFirebaseInstances] = useState<FirebaseContextType | null>(null);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-            const auth = getAuth(app);
-            
-            let analytics = null;
-            try {
-                analytics = getAnalytics(app);
-            } catch (e) {
-                console.error('Failed to initialize Analytics', e);
-            }
-            
-            let messaging = null;
-            try {
-                messaging = getMessaging(app);
-            } catch (e) {
-                console.error('Failed to initialize Messaging', e);
-            }
-            
-            setFirebaseInstances({ app, auth, analytics, messaging });
-        }
-    }, []);
-
-    if (!firebaseInstances) {
-        return null; // or a loading spinner
-    }
-
-    return (
-        <FirebaseContext.Provider value={firebaseInstances}>
-            <AuthProviderContent>{children}</AuthProviderContent>
-        </FirebaseContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={value}>
+      {loading ? (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+          <Spinner size="lg" />
+        </div>
+      ) : (
+        children
+      )}
+    </AuthContext.Provider>
+  );
 };
