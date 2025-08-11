@@ -56,6 +56,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const authInstance = getAuth(app);
       setAuth(authInstance);
 
+      setPersistence(authInstance, browserLocalPersistence)
+        .then(() => {
+          const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+            setUser(user);
+            setLoading(false);
+          });
+          return () => unsubscribe();
+        })
+        .catch((error) => {
+          console.error("Error setting persistence:", error);
+          setLoading(false);
+        });
+
       try {
         const messagingInstance = getMessaging(app);
         setMessaging(messagingInstance);
@@ -68,13 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (e) {
         console.error('Failed to initialize Analytics', e);
       }
-
-      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
-        setUser(user);
-        setLoading(false);
-      });
-
-      return () => unsubscribe();
     }
   }, []);
 
@@ -90,7 +96,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     if (!auth) return;
     try {
-      await setPersistence(auth, browserLocalPersistence);
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error) {
@@ -101,7 +106,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
     if (!auth) return;
     try {
-      await setPersistence(auth, browserLocalPersistence);
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
@@ -111,7 +115,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
     if (!auth) return;
     try {
-      await setPersistence(auth, browserLocalPersistence);
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
