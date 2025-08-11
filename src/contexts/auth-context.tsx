@@ -9,17 +9,13 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut,
-  Auth,
-  getAuth
+  signOut
 } from 'firebase/auth';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
-import { firebaseConfig } from '@/lib/firebase';
-import { getMessaging, Messaging } from 'firebase/messaging';
-import { getAnalytics } from 'firebase/analytics';
+import { auth, messaging } from '@/lib/firebase';
 import { Spinner } from '@/components/spinner';
+import { Messaging } from 'firebase/messaging';
 
 interface AuthContextType {
   user: User | null;
@@ -44,46 +40,27 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [auth, setAuth] = useState<Auth | null>(null);
-  const [messaging, setMessaging] = useState<Messaging | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // This check ensures Firebase is only initialized on the client side
-    if (typeof window !== 'undefined') {
-      const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-      const authInstance = getAuth(app);
-      setAuth(authInstance);
-
-      try {
-        const messagingInstance = getMessaging(app);
-        setMessaging(messagingInstance);
-      } catch (e) {
-        console.error('Failed to initialize Messaging', e);
-      }
-      
-      try {
-        getAnalytics(app);
-      } catch (e) {
-        console.error('Failed to initialize Analytics', e);
-      }
-
-      // Listener for auth state changes
-      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
-        setUser(user);
+    // This check is to prevent server-side execution.
+    // 'auth' is imported from firebase.ts which handles client-side initialization.
+    if (!auth) {
         setLoading(false);
-      });
-
-      // Cleanup subscription on unmount
-      return () => unsubscribe();
-    } else {
-        setLoading(false);
+        return;
     }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const handleAuthError = (error: any) => {
     console.error("Authentication Error:", error);
-    setLoading(false);
     toast({
       variant: "destructive",
       title: "Authentication Failed",
@@ -92,7 +69,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    if (!auth) return;
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
@@ -105,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
-    if (!auth) return;
     setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
@@ -117,7 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
-    if (!auth) return;
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -129,7 +103,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signOutUser = async () => {
-    if (!auth) return;
     setLoading(true);
     try {
       await signOut(auth);
