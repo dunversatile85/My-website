@@ -11,78 +11,15 @@ import {
   signInWithEmailAndPassword,
   signOut,
   Auth,
-  getAuth,
-  setPersistence,
-  browserLocalPersistence
+  getAuth
 } from 'firebase/auth';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
 import { firebaseConfig } from '@/lib/firebase';
 import { getMessaging, Messaging } from 'firebase/messaging';
-import { getAnalytics, Analytics } from 'firebase/analytics';
+import { getAnalytics } from 'firebase/analytics';
 import { Spinner } from '@/components/spinner';
-
-interface FirebaseContextType {
-  app: FirebaseApp | null;
-  auth: Auth | null;
-  messaging: Messaging | null;
-}
-
-const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
-
-export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
-  const [app, setApp] = useState<FirebaseApp | null>(null);
-  const [auth, setAuth] = useState<Auth | null>(null);
-  const [messaging, setMessaging] = useState<Messaging | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const initializedApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-      const authInstance = getAuth(initializedApp);
-      
-      setApp(initializedApp);
-      setAuth(authInstance);
-
-      try {
-        const messagingInstance = getMessaging(initializedApp);
-        setMessaging(messagingInstance);
-      } catch (e) {
-        console.error('Failed to initialize Messaging', e);
-      }
-      
-      try {
-        getAnalytics(initializedApp);
-      } catch (e) {
-        console.error('Failed to initialize Analytics', e);
-      }
-      setLoading(false);
-    }
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  return (
-    <FirebaseContext.Provider value={{ app, auth, messaging }}>
-      {children}
-    </FirebaseContext.Provider>
-  );
-};
-
-export const useFirebase = () => {
-  const context = useContext(FirebaseContext);
-  if (context === undefined) {
-    throw new Error('useFirebase must be used within a FirebaseProvider');
-  }
-  return context;
-};
 
 interface AuthContextType {
   user: User | null;
@@ -105,32 +42,48 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { auth, messaging } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState<Auth | null>(null);
+  const [messaging, setMessaging] = useState<Messaging | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (auth) {
-      setPersistence(auth, browserLocalPersistence)
-        .then(() => {
-          const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
-            setLoading(false);
-          });
-          return () => unsubscribe();
-        })
-        .catch((error) => {
-          console.error("Error setting persistence:", error);
-          setLoading(false);
-        });
+    // This check ensures Firebase is only initialized on the client side
+    if (typeof window !== 'undefined') {
+      const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+      const authInstance = getAuth(app);
+      setAuth(authInstance);
+
+      try {
+        const messagingInstance = getMessaging(app);
+        setMessaging(messagingInstance);
+      } catch (e) {
+        console.error('Failed to initialize Messaging', e);
+      }
+      
+      try {
+        getAnalytics(app);
+      } catch (e) {
+        console.error('Failed to initialize Analytics', e);
+      }
+
+      // Listener for auth state changes
+      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+
+      // Cleanup subscription on unmount
+      return () => unsubscribe();
     } else {
         setLoading(false);
     }
-  }, [auth]);
+  }, []);
 
   const handleAuthError = (error: any) => {
     console.error("Authentication Error:", error);
+    setLoading(false);
     toast({
       variant: "destructive",
       title: "Authentication Failed",
@@ -140,38 +93,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     if (!auth) return;
+    setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error) {
       handleAuthError(error);
+    } finally {
+      setLoading(false);
     }
   };
   
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
     if (!auth) return;
+    setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
+    } finally {
+      setLoading(false);
     }
   };
   
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
     if (!auth) return;
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
+    } finally {
+      setLoading(false);
     }
   };
   
   const signOutUser = async () => {
     if (!auth) return;
+    setLoading(true);
     try {
       await signOut(auth);
     } catch (error) {
       handleAuthError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
