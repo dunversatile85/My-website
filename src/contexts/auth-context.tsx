@@ -9,9 +9,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  Auth
 } from 'firebase/auth';
-import { getFirebaseInstances } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
 
@@ -29,19 +28,17 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [auth, setAuth] = useState<Auth | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const { auth: authInstance } = getFirebaseInstances();
-    setAuth(authInstance);
-
-    if (authInstance) {
-      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         setLoading(false);
       });
       return () => unsubscribe();
+    } else {
+      setLoading(false);
     }
   }, []);
 
