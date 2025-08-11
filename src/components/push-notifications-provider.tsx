@@ -17,6 +17,7 @@ export function PushNotificationsProvider() {
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
                 console.log('Notification permission granted.');
+                // In a real app, you would get this VAPID key from your Firebase project settings.
                 getToken(messaging, { vapidKey: "your-vapid-key" })
                     .then((currentToken) => {
                         if (currentToken) {

@@ -9,13 +9,22 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  Auth
 } from 'firebase/auth';
+import { getAuth } from "firebase/auth";
+import { getMessaging, Messaging } from "firebase/messaging";
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
-import { auth, messaging } from '@/lib/firebase';
 import { Spinner } from '@/components/spinner';
-import { Messaging } from 'firebase/messaging';
+import { FirebaseApp } from 'firebase/app';
+import { initializeFirebase } from '@/lib/firebase';
+
+interface FirebaseInstances {
+  app: FirebaseApp;
+  auth: Auth;
+  messaging: Messaging | null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -38,25 +47,33 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [firebase, setFirebase] = useState<FirebaseInstances | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // This check is to prevent server-side execution.
-    // 'auth' is imported from firebase.ts which handles client-side initialization.
-    if (!auth) {
+    // This check ensures Firebase is initialized only on the client side.
+    if (typeof window !== 'undefined') {
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      let messaging: Messaging | null = null;
+      try {
+        messaging = getMessaging(app);
+      } catch (e) {
+        console.error("Failed to initialize Firebase Messaging", e);
+      }
+      
+      setFirebase({ app, auth, messaging });
+
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
         setLoading(false);
-        return;
+      });
+
+      // Cleanup subscription on unmount
+      return () => unsubscribe();
     }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
   }, []);
 
   const handleAuthError = (error: any) => {
@@ -69,10 +86,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
+    if (!firebase) return;
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(firebase.auth, provider);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -81,9 +99,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
+    if (!firebase) return;
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(firebase.auth, email, password);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -92,9 +111,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
+    if (!firebase) return;
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(firebase.auth, email, password);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -103,9 +123,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signOutUser = async () => {
+    if (!firebase) return;
     setLoading(true);
     try {
-      await signOut(auth);
+      await signOut(firebase.auth);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -120,18 +141,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUpWithEmail,
     signInWithEmail,
     signOutUser,
-    messaging,
+    messaging: firebase?.messaging || null,
   };
+
+  // Render a spinner while Firebase is initializing or auth state is loading
+  if (loading || !firebase) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>
-      {loading ? (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-          <Spinner size="lg" />
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </AuthContext.Provider>
   );
 };
