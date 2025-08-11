@@ -1,3 +1,4 @@
+
 import type { FirebaseOptions } from "firebase/app";
 
 export const firebaseConfig: FirebaseOptions = {
@@ -6,6 +7,5 @@ export const firebaseConfig: FirebaseOptions = {
   projectId: "dons-playworld",
   storageBucket: "dons-playworld.firebasestorage.app",
   messagingSenderId: "4636726751",
-  appId: "1:4636726751:web:f503c77e281710f74c606a",
-  measurementId: ""
+  appId: "1:4636726751:web:f503c77e281710f74c606a"
 };

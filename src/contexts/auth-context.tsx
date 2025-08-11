@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useEffect, useState, ReactNode } from 'react';
@@ -40,49 +41,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       return () => unsubscribe();
     } else {
-      // if firebase.auth is not available, we are not loading a user
       setLoading(false);
     }
   }, [firebase]);
 
-  const withAuth = <T,>(action: (auth: Auth, ...args: T[]) => Promise<any>) => {
-    return async (...args: T[]) => {
-      if (!firebase?.auth) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Firebase is not initialized. Please try again later.",
-        });
-        return;
-      }
-      try {
-        await action(firebase.auth, ...args);
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Authentication Failed",
-          description: error.message,
-        });
-      }
-    };
+  const handleAuthError = (error: any) => {
+    toast({
+      variant: "destructive",
+      title: "Authentication Failed",
+      description: error.message,
+    });
   };
 
-  const signInWithGoogle = withAuth(async (auth: Auth) => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-  });
+  const signInWithGoogle = async () => {
+    if (!firebase?.auth) {
+      console.error("Firebase not initialized");
+      return;
+    }
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(firebase.auth, provider);
+    } catch (error) {
+      handleAuthError(error);
+    }
+  };
   
-  const signUpWithEmail = withAuth(async (auth: Auth, { email, password }: AuthCredentials) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-  });
+  const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
+    if (!firebase?.auth) {
+      console.error("Firebase not initialized");
+      return;
+    }
+    try {
+      await createUserWithEmailAndPassword(firebase.auth, email, password);
+    } catch (error) {
+      handleAuthError(error);
+    }
+  };
   
-  const signInWithEmail = withAuth(async (auth: Auth, { email, password }: AuthCredentials) => {
-    await signInWithEmailAndPassword(auth, email, password);
-  });
+  const signInWithEmail = async ({ email, password }: AuthCredentials) => {
+    if (!firebase?.auth) {
+      console.error("Firebase not initialized");
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(firebase.auth, email, password);
+    } catch (error) {
+      handleAuthError(error);
+    }
+  };
   
-  const signOutUser = withAuth(async (auth: Auth) => {
-    await signOut(auth);
-  });
+  const signOutUser = async () => {
+    if (!firebase?.auth) {
+      console.error("Firebase not initialized");
+      return;
+    }
+    try {
+      await signOut(firebase.auth);
+    } catch (error) {
+      handleAuthError(error);
+    }
+  };
 
   const value = {
     user,
