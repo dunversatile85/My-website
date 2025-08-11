@@ -15,7 +15,6 @@ import {
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
-import { Spinner } from '@/components/spinner';
 import { initializeFirebase } from '@/lib/firebase';
 import { FirebaseApp } from 'firebase/app';
 import { Messaging, getMessaging } from 'firebase/messaging';
@@ -88,8 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithPopup(auth, provider);
     } catch (error) {
       handleAuthError(error);
-    } finally {
-      // setLoading(false) is handled by onAuthStateChanged
+      setLoading(false);
     }
   };
   
@@ -100,8 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
-    } finally {
-       // setLoading(false) is handled by onAuthStateChanged
+      setLoading(false);
     }
   };
   
@@ -112,8 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
-    } finally {
-       // setLoading(false) is handled by onAuthStateChanged
+      setLoading(false);
     }
   };
   
@@ -124,8 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut(auth);
     } catch (error) {
       handleAuthError(error);
-    } finally {
-       // setLoading(false) is handled by onAuthStateChanged
+      setLoading(false);
     }
   };
 
@@ -140,14 +135,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     auth,
     messaging,
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={value}>

@@ -3,14 +3,14 @@
 import { useEffect } from 'react';
 import { getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 
 export function PushNotificationsProvider() {
   const { toast } = useToast();
   const { user, messaging } = useAuth();
 
   useEffect(() => {
-    if (messaging && user) {
+    if (messaging && user && typeof window !== 'undefined') {
         // A real app would register a service worker here
         // navigator.service-worker.register('/firebase-messaging-sw.js')
         
