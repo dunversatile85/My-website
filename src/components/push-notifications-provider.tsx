@@ -1,24 +1,25 @@
+
 'use client';
 import { useEffect } from 'react';
 import { getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { useFirebase } from '@/hooks/use-firebase';
+import { useFirebase } from '@/contexts/auth-context';
 
 export function PushNotificationsProvider() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const firebase = useFirebase();
+  const { messaging } = useFirebase();
 
   useEffect(() => {
-    if (firebase?.messaging && user) {
+    if (messaging && user) {
         // A real app would register a service worker here
         // navigator.serviceWorker.register('/firebase-messaging-sw.js')
         
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
                 console.log('Notification permission granted.');
-                getToken(firebase.messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || "your-vapid-key" })
+                getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || "your-vapid-key" })
                     .then((currentToken) => {
                         if (currentToken) {
                             console.log('FCM Token:', currentToken);
@@ -40,7 +41,7 @@ export function PushNotificationsProvider() {
             }
         });
     }
-  }, [toast, user, firebase]);
+  }, [toast, user, messaging]);
 
   return null; // This component does not render anything
 }
