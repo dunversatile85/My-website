@@ -10,21 +10,11 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  Auth,
-  getAuth,
 } from 'firebase/auth';
-import { getMessaging, Messaging } from "firebase/messaging";
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
+import { useFirebase } from './firebase-context';
 import { Spinner } from '@/components/spinner';
-import { FirebaseApp } from 'firebase/app';
-import { initializeFirebase } from '@/lib/firebase';
-
-interface FirebaseInstances {
-  app: FirebaseApp;
-  auth: Auth;
-  messaging: Messaging | null;
-}
 
 interface AuthContextType {
   user: User | null;
@@ -33,7 +23,6 @@ interface AuthContextType {
   signUpWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signInWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signOutUser: () => Promise<void>;
-  messaging: Messaging | null;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,34 +36,25 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [firebase, setFirebase] = useState<FirebaseInstances | null>(null);
+  const { auth } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // This check ensures Firebase is initialized only on the client side.
-    if (typeof window !== 'undefined') {
-      const app = initializeFirebase();
-      const auth = getAuth(app);
-      let messaging: Messaging | null = null;
-      try {
-        messaging = getMessaging(app);
-      } catch (e) {
-        console.error("Failed to initialize Firebase Messaging", e);
-      }
-      
-      setFirebase({ app, auth, messaging });
-
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        setLoading(false);
-      });
-
-      // Cleanup subscription on unmount
-      return () => unsubscribe();
+    if (!auth) {
+      // Firebase might not be initialized yet, AuthProvider will re-render when it is.
+      return;
     }
-  }, []);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [auth]);
 
   const handleAuthError = (error: any) => {
     console.error("Authentication Error:", error);
@@ -86,11 +66,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    if (!firebase) return;
+    if (!auth) return;
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(firebase.auth, provider);
+      await signInWithPopup(auth, provider);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -99,10 +79,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
-    if (!firebase) return;
+    if (!auth) return;
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(firebase.auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -111,10 +91,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
-    if (!firebase) return;
+    if (!auth) return;
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(firebase.auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -123,10 +103,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const signOutUser = async () => {
-    if (!firebase) return;
+    if (!auth) return;
     setLoading(true);
     try {
-      await signOut(firebase.auth);
+      await signOut(auth);
     } catch (error) {
       handleAuthError(error);
     } finally {
@@ -141,11 +121,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUpWithEmail,
     signInWithEmail,
     signOutUser,
-    messaging: firebase?.messaging || null,
   };
 
-  // Render a spinner while Firebase is initializing or auth state is loading
-  if (loading || !firebase) {
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Spinner size="lg" />

@@ -1,3 +1,6 @@
+
+// This file can be removed if not needed for specific auth layout, 
+// but we keep it for structure.
 export default function AuthLayout({
   children,
 }: {
