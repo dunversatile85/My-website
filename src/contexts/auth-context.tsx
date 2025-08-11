@@ -10,11 +10,15 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  Auth,
+  getAuth,
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
-import { useFirebase } from './firebase-context';
 import { Spinner } from '@/components/spinner';
+import { initializeFirebase } from '@/lib/firebase';
+import { FirebaseApp } from 'firebase/app';
+import { Messaging, getMessaging } from 'firebase/messaging';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +27,9 @@ interface AuthContextType {
   signUpWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signInWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signOutUser: () => Promise<void>;
+  app: FirebaseApp | null;
+  auth: Auth | null;
+  messaging: Messaging | null;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,25 +43,33 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { auth } = useFirebase();
+  const [app, setApp] = useState<FirebaseApp | null>(null);
+  const [auth, setAuth] = useState<Auth | null>(null);
+  const [messaging, setMessaging] = useState<Messaging | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!auth) {
-      // Firebase might not be initialized yet, AuthProvider will re-render when it is.
-      return;
+    const firebaseApp = initializeFirebase();
+    const authInstance = getAuth(firebaseApp);
+    setApp(firebaseApp);
+    setAuth(authInstance);
+    
+    try {
+      const messagingInstance = getMessaging(firebaseApp);
+      setMessaging(messagingInstance);
+    } catch(e) {
+       console.error("Failed to initialize Firebase Messaging", e);
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(authInstance, (user) => {
       setUser(user);
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [auth]);
+  }, []);
 
   const handleAuthError = (error: any) => {
     console.error("Authentication Error:", error);
@@ -74,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       handleAuthError(error);
     } finally {
-      setLoading(false);
+      // setLoading(false) is handled by onAuthStateChanged
     }
   };
   
@@ -86,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       handleAuthError(error);
     } finally {
-      setLoading(false);
+       // setLoading(false) is handled by onAuthStateChanged
     }
   };
   
@@ -98,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       handleAuthError(error);
     } finally {
-      setLoading(false);
+       // setLoading(false) is handled by onAuthStateChanged
     }
   };
   
@@ -110,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       handleAuthError(error);
     } finally {
-      setLoading(false);
+       // setLoading(false) is handled by onAuthStateChanged
     }
   };
 
@@ -121,6 +136,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUpWithEmail,
     signInWithEmail,
     signOutUser,
+    app,
+    auth,
+    messaging,
   };
 
   if (loading) {

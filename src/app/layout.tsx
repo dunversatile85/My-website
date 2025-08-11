@@ -2,7 +2,8 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import Providers from '@/components/providers';
+import { AuthProvider } from '@/contexts/auth-context';
+import { PushNotificationsProvider } from '@/components/push-notifications-provider';
 
 export const metadata: Metadata = {
   title: 'Don’s PlayWorld',
@@ -22,9 +23,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased h-full bg-background">
-        <Providers>
+        <AuthProvider>
           {children}
-        </Providers>
+          <PushNotificationsProvider />
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
