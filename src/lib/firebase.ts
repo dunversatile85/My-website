@@ -1,5 +1,5 @@
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { getMessaging } from "firebase/messaging";
 
@@ -13,28 +13,30 @@ const firebaseConfig = {
   measurementId: ""
 };
 
-// Initialize Firebase
-let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
+// Initialize Firebase for client-side
+function getFirebaseInstances(): { app: FirebaseApp, auth: Auth } {
+  if (typeof window !== 'undefined') {
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    const auth = getAuth(app);
+    
+    // Initialize other services if needed
+    try {
+      getAnalytics(app);
+    } catch (e) {
+      console.error('Failed to initialize Analytics', e);
+    }
+    try {
+      getMessaging(app);
+    } catch (e) {
+      console.error('Failed to initialize Messaging', e);
+    }
+    
+    return { app, auth };
+  }
+  // This is a fallback for server-side rendering, though client-side is preferred for auth
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  const auth = getAuth(app);
+  return { app, auth };
 }
 
-const auth = getAuth(app);
-
-// Initialize Firebase services only on the client side
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  try {
-    getAnalytics(app);
-  } catch (e) {
-    console.error('Failed to initialize Analytics', e);
-  }
-  try {
-    getMessaging(app);
-  } catch (e) {
-    console.error('Failed to initialize Messaging', e);
-  }
-}
-
-export { app, auth };
+export const { app, auth } = getFirebaseInstances();
