@@ -1,10 +1,9 @@
 
-"use client";
+'use client';
 
 import { createContext, useEffect, useState, ReactNode, useContext } from 'react';
-import type { User, Auth, GoogleAuthProvider } from 'firebase/auth';
+import type { User, Auth, Messaging } from 'firebase/auth';
 import type { FirebaseApp } from 'firebase/app';
-import type { Messaging } from 'firebase/messaging';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
 import { firebaseConfig } from '@/lib/firebase';
@@ -46,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { initializeApp, getApps, getApp } = await import('firebase/app');
         const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
         
-        const { getAuth, onAuthStateChanged } = await import('firebase/auth');
+        const { getAuth } = await import('firebase/auth');
         const authInstance = getAuth(firebaseApp);
         
         let messagingInstance: Messaging | null = null;
@@ -63,12 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAuth(authInstance);
         setMessaging(messagingInstance);
 
-        const unsubscribe = onAuthStateChanged(authInstance, (user) => {
-          setUser(user);
-          setLoading(false);
-        });
-
-        return () => unsubscribe();
       } catch (error) {
         console.error("Firebase initialization error", error);
         toast({
@@ -82,6 +75,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initializeFirebase();
   }, [toast]);
+
+  useEffect(() => {
+    if (auth) {
+      const { onAuthStateChanged } = require('firebase/auth');
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    }
+  }, [auth]);
+
 
   const handleAuthError = (error: any) => {
     console.error("Authentication Error:", error);
@@ -102,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       handleAuthError(error);
     } finally {
-      setLoading(false);
+      // setLoading(false) is handled by onAuthStateChanged
     }
   };
   
@@ -114,8 +119,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
-    } finally {
       setLoading(false);
+    } finally {
+      // setLoading(false) is handled by onAuthStateChanged
     }
   };
   
@@ -127,8 +133,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
-    } finally {
       setLoading(false);
+    } finally {
+      // setLoading(false) is handled by onAuthStateChanged
     }
   };
   
@@ -140,8 +147,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut(auth);
     } catch (error) {
       handleAuthError(error);
-    } finally {
       setLoading(false);
+    } finally {
+      // setLoading(false) is handled by onAuthStateChanged
     }
   };
 
