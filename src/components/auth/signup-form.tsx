@@ -16,7 +16,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
-import { useState } from 'react';
 import { Spinner } from '../spinner';
 
 const formSchema = z.object({
@@ -25,8 +24,7 @@ const formSchema = z.object({
 });
 
 export function SignUpForm() {
-  const { signUpWithEmail } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { signUpWithEmail, loading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,9 +35,7 @@ export function SignUpForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
     await signUpWithEmail(values);
-    setIsLoading(false);
   }
 
   return (
@@ -79,8 +75,8 @@ export function SignUpForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Spinner size="sm" color="primary" className="mr-2" />}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Spinner size="sm" color="primary" className="mr-2" />}
               Create Account
             </Button>
           </form>

@@ -17,7 +17,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { GoogleIcon } from './google-icon';
-import { useState } from 'react';
 import { Spinner } from '../spinner';
 
 const formSchema = z.object({
@@ -26,8 +25,7 @@ const formSchema = z.object({
 });
 
 export function LoginForm() {
-  const { signInWithEmail, signInWithGoogle } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { signInWithEmail, signInWithGoogle, loading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,15 +36,11 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
     await signInWithEmail(values);
-    setIsLoading(false);
   }
 
   async function handleGoogleSignIn() {
-    setIsLoading(true);
     await signInWithGoogle();
-    setIsLoading(false);
   }
 
   return (
@@ -86,8 +80,8 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Spinner size="sm" color="primary" className="mr-2" />}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Spinner size="sm" color="primary" className="mr-2" />}
               Login
             </Button>
           </form>
@@ -102,7 +96,7 @@ export function LoginForm() {
             </span>
           </div>
         </div>
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
           <GoogleIcon className="mr-2 h-4 w-4" />
           Google
         </Button>

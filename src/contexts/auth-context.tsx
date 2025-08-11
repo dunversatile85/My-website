@@ -87,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithPopup(auth, provider);
     } catch (error) {
       handleAuthError(error);
+    } finally {
       setLoading(false);
     }
   };
@@ -98,6 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
+    } finally {
       setLoading(false);
     }
   };
@@ -109,6 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
+    } finally {
       setLoading(false);
     }
   };
@@ -120,6 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut(auth);
     } catch (error) {
       handleAuthError(error);
+    } finally {
       setLoading(false);
     }
   };
@@ -138,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
