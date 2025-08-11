@@ -15,9 +15,10 @@ import {
 } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
-import { initializeFirebase } from '@/lib/firebase';
-import { FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { Messaging, getMessaging } from 'firebase/messaging';
+import { firebaseConfig } from '@/lib/firebase';
+import { Spinner } from '@/components/spinner';
 
 interface AuthContextType {
   user: User | null;
@@ -26,8 +27,8 @@ interface AuthContextType {
   signUpWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signInWithEmail: (credentials: AuthCredentials) => Promise<void>;
   signOutUser: () => Promise<void>;
-  app: FirebaseApp | null;
-  auth: Auth | null;
+  app: FirebaseApp;
+  auth: Auth;
   messaging: Messaging | null;
 }
 
@@ -50,13 +51,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const firebaseApp = initializeFirebase();
-    const authInstance = getAuth(firebaseApp);
-    setApp(firebaseApp);
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    const authInstance = getAuth(app);
+    setApp(app);
     setAuth(authInstance);
     
     try {
-      const messagingInstance = getMessaging(firebaseApp);
+      const messagingInstance = getMessaging(app);
       setMessaging(messagingInstance);
     } catch(e) {
        console.error("Failed to initialize Firebase Messaging", e);
@@ -128,6 +129,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  if (loading || !auth || !app) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
   const value = {
     user,
     loading,
@@ -142,7 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
