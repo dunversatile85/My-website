@@ -12,6 +12,8 @@ import {
   signOut,
   Auth,
   getAuth,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { useToast } from "@/hooks/use-toast";
@@ -77,16 +79,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleAuthError = (error: any) => {
+    console.error("Authentication Error:", error);
     toast({
       variant: "destructive",
       title: "Authentication Failed",
-      description: error.message,
+      description: error.message || "An unknown authentication error occurred.",
     });
   };
 
   const signInWithGoogle = async () => {
     if (!auth) return;
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error) {
@@ -97,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
     if (!auth) return;
     try {
+      await setPersistence(auth, browserLocalPersistence);
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
@@ -106,6 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithEmail = async ({ email, password }: AuthCredentials) => {
     if (!auth) return;
     try {
+      await setPersistence(auth, browserLocalPersistence);
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       handleAuthError(error);
