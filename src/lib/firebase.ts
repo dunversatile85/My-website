@@ -4,13 +4,13 @@ import { getAnalytics } from "firebase/analytics";
 import { getMessaging } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "your-api-key",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "your-auth-domain",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "your-project-id",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "your-storage-bucket",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "your-messaging-sender-id",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "your-app-id",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "your-measurement-id"
+  apiKey: "fake-api-key",
+  authDomain: "app-prototyper-2.firebaseapp.com",
+  projectId: "app-prototyper-2",
+  storageBucket: "app-prototyper-2.appspot.com",
+  messagingSenderId: "957013876341",
+  appId: "1:957013876341:web:3547161556021571173988",
+  measurementId: "G-5G97QGB8P2"
 };
 
 // Initialize Firebase
