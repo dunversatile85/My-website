@@ -1,38 +1,11 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
-import { getMessaging } from "firebase/messaging";
+import type { FirebaseOptions } from "firebase/app";
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+export const firebaseConfig: FirebaseOptions = {
+  apiKey: "AIzaSyDt_RRKw9WipU4uOPKHuqZ5aZVuMbn_Mhw",
+  authDomain: "dons-playworld.firebaseapp.com",
+  projectId: "dons-playworld",
+  storageBucket: "dons-playworld.firebasestorage.app",
+  messagingSenderId: "4636726751",
+  appId: "1:4636726751:web:f503c77e281710f74c606a",
+  measurementId: ""
 };
-
-let app: FirebaseApp;
-let auth: Auth;
-
-if (typeof window !== 'undefined' && !getApps().length) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  try {
-    getAnalytics(app);
-  } catch (e) {
-    console.error('Failed to initialize Analytics', e);
-  }
-  try {
-    getMessaging(app);
-  } catch (e) {
-    console.error('Failed to initialize Messaging', e);
-  }
-} else if (typeof window !== 'undefined') {
-  app = getApp();
-  auth = getAuth(app);
-}
-
-// @ts-ignore
-export { app, auth };

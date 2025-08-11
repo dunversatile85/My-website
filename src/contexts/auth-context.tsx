@@ -9,10 +9,11 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  Auth,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { AuthCredentials } from '@/types';
+import { useFirebase } from '@/hooks/use-firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -26,74 +27,62 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const firebase = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (auth) {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (firebase?.auth) {
+      const unsubscribe = onAuthStateChanged(firebase.auth, (user) => {
         setUser(user);
         setLoading(false);
       });
       return () => unsubscribe();
     } else {
+      // if firebase.auth is not available, we are not loading a user
       setLoading(false);
     }
-  }, []);
+  }, [firebase]);
 
-  const signInWithGoogle = async () => {
-    if (!auth) return;
+  const withAuth = <T,>(action: (auth: Auth, ...args: T[]) => Promise<any>) => {
+    return async (...args: T[]) => {
+      if (!firebase?.auth) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Firebase is not initialized. Please try again later.",
+        });
+        return;
+      }
+      try {
+        await action(firebase.auth, ...args);
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Failed",
+          description: error.message,
+        });
+      }
+    };
+  };
+
+  const signInWithGoogle = withAuth(async (auth: Auth) => {
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Google Sign-In Failed",
-        description: error.message,
-      });
-    }
-  };
-
-  const signUpWithEmail = async ({ email, password }: AuthCredentials) => {
-    if (!auth) return;
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Sign-Up Failed",
-        description: error.message,
-      });
-    }
-  };
-
-  const signInWithEmail = async ({ email, password }: AuthCredentials) => {
-    if (!auth) return;
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Sign-In Failed",
-        description: error.message,
-      });
-    }
-  };
-
-  const signOutUser = async () => {
-    if (!auth) return;
-    try {
-      await signOut(auth);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Sign-Out Failed",
-        description: error.message,
-      });
-    }
-  };
+    await signInWithPopup(auth, provider);
+  });
+  
+  const signUpWithEmail = withAuth(async (auth: Auth, { email, password }: AuthCredentials) => {
+    await createUserWithEmailAndPassword(auth, email, password);
+  });
+  
+  const signInWithEmail = withAuth(async (auth: Auth, { email, password }: AuthCredentials) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  });
+  
+  const signOutUser = withAuth(async (auth: Auth) => {
+    await signOut(auth);
+  });
 
   const value = {
     user,
