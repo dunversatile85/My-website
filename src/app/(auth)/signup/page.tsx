@@ -1,23 +1,22 @@
-"use client";
+'use client';
 
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import AppHeader from '@/components/app-header';
-import WebView from '@/components/webview';
 import { Spinner } from '@/components/spinner';
+import { SignUpForm } from '@/components/auth/signup-form';
 
-export default function HomePage() {
+export default function SignUpPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading && user) {
+      router.push('/');
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Spinner size="lg" />
@@ -25,12 +24,5 @@ export default function HomePage() {
     );
   }
 
-  return (
-    <div className="flex h-screen flex-col bg-background">
-      <AppHeader />
-      <main className="flex-1 overflow-hidden">
-        <WebView url="https://dpw7.it.com" />
-      </main>
-    </div>
-  );
+  return <SignUpForm />;
 }
