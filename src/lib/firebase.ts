@@ -1,5 +1,4 @@
 
-import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import type { FirebaseOptions } from "firebase/app";
 
 export const firebaseConfig: FirebaseOptions = {
@@ -10,12 +9,3 @@ export const firebaseConfig: FirebaseOptions = {
   messagingSenderId: "4636726751",
   appId: "1:4636726751:web:f503c77e281710f74c606a",
 };
-
-// Helper function to initialize Firebase
-export function initializeFirebase(): FirebaseApp {
-    if (!getApps().length) {
-        return initializeApp(firebaseConfig);
-    } else {
-        return getApp();
-    }
-}
