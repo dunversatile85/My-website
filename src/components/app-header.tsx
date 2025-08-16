@@ -46,7 +46,7 @@ export default function AppHeader() {
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 md:px-6">
       <div className="flex items-center gap-2">
         <Award className="h-8 w-8 text-primary" />
-        <h1 className="text-xl font-bold text-primary">Don’s PlayWorld</h1>
+        <h1 className="text-xl font-bold text-primary">dpw7.it.com</h1>
       </div>
       <div className="flex items-center gap-2 md:gap-4">
         <Button asChild variant="secondary" className="bg-accent hover:bg-accent/80">
