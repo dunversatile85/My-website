@@ -1,5 +1,28 @@
 "use client";
+import { useEffect } from "react";
+import Script from "next/script";
+import type { AppProps } from "next/app";
 
+export default function MyApp({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    if ((window as any).netlifyIdentity) {
+      (window as any).netlifyIdentity.on("init", (user: any) => {
+        if (!user) {
+          (window as any).netlifyIdentity.on("login", () => {
+            document.location.href = "/";
+          });
+        }
+      });
+    }
+  }, []);
+
+  return (
+    <>
+      <Script src="https://identity.netlify.com/v1/netlify-identity-widget.js" />
+      <Component {...pageProps} />
+    </>
+  );
+}
 import AppHeader from '@/components/app-header';
 import WebView from '@/components/webview';
 import { useAuth } from '@/hooks/use-auth';
