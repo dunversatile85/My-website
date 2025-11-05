@@ -1,59 +1,68 @@
-"use client";
-import { useEffect } from "react";
-import Script from "next/script";
-import type { AppProps } from "next/app";
+import { auth } from "../firebase/firebaseConfig";
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { useEffect, useState } from "react";
 
-export default function MyApp({ Component, pageProps }: AppProps) {
+export default function Home() {
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
-    if ((window as any).netlifyIdentity) {
-      (window as any).netlifyIdentity.on("init", (user: any) => {
-        if (!user) {
-          (window as any).netlifyIdentity.on("login", () => {
-            document.location.href = "/";
-          });
-        }
-      });
-    }
+    const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
+    return () => unsubscribe();
   }, []);
 
-  return (
-    <>
-      <Script src="https://identity.netlify.com/v1/netlify-identity-widget.js" />
-      <Component {...pageProps} />
-    </>
-  );
-}
-import AppHeader from '@/components/app-header';
-import WebView from '@/components/webview';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Spinner } from '@/components/spinner';
-
-export default function HomePage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      alert(`Welcome ${result.user.displayName || "User"}!`);
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Login failed. Check the console for details.");
     }
-  }, [user, loading, router]);
+  };
 
-  if (loading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  const handleLogout = async () => {
+    await signOut(auth);
+    alert("You’ve been signed out.");
+  };
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      <AppHeader />
-      <main className="flex-1 overflow-hidden">
-        <WebView url="https://dpw7.it.com" />
-      </main>
+    <div style={{ textAlign: "center", marginTop: "50px", color: "#fff", backgroundColor: "#000", height: "100vh" }}>
+      <h1 style={{ color: "#00bfff" }}>Welcome to Don’s Playworld</h1>
+      {user ? (
+        <>
+          <p>Signed in as {user.displayName}</p>
+          <button
+            onClick={handleLogout}
+            style={{
+              backgroundColor: "grey",
+              color: "white",
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "none",
+              fontSize: "16px",
+              cursor: "pointer",
+            }}
+          >
+            Sign Out
+          </button>
+        </>
+      ) : (
+        <button
+          onClick={handleLogin}
+          style={{
+            backgroundColor: "#007bff",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: "8px",
+            border: "none",
+            fontSize: "16px",
+            cursor: "pointer",
+          }}
+        >
+          Sign in with Google
+        </button>
+      )}
     </div>
   );
 }
