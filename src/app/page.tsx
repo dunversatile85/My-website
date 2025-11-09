@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 
 export default function Home() {
@@ -14,16 +13,18 @@ export default function Home() {
         height: "100vh",
       }}
     >
-      <iframe
-        src="https://dpw7.it.com"
-        style={{
-          width: "100%",
-          height: "100%",
-          border: "none",
-          backgroundColor: "#1a1a1a",
-        }}
-        title="Don's Playworld"
-      ></iframe>
+      <div style={{ width: "100%", height: "100%" }}>
+        <iframe
+          src="https://dpw7.it.com"
+          title="Don's Playworld"
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+            backgroundColor: "#1a1a1a",
+          }}
+        />
+      </div>
     </main>
   );
 }
